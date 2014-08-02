@@ -30,11 +30,12 @@ public class LogCollector implements EventListener {
 
     private long currentThread;
     private NodeCollector currentTreeNode;
-    private int expectedNumberOfFrames;
+    private boolean notAwaiting;
 
     private int traceCount;
     private boolean logComplete;
     private boolean continuous;
+
 
     public LogCollector(ProfileListener listener, boolean continuous) {
         this.listener = listener;
@@ -48,14 +49,14 @@ public class LogCollector implements EventListener {
         traceCount = 0;
         logComplete = false;
         currentTreeNode = null;
-        expectedNumberOfFrames = NOT_AWAITING;
+        notAwaiting = true;
     }
 
     @Override
     public void handle(TraceStart traceStart) {
+        collectThreadDump();
         traceCount++;
-        expectedNumberOfFrames = traceStart.getNumberOfFrames();
-        reversalStack.clear();
+        notAwaiting = false;
         currentThread = traceStart.getThreadId();
         currentTreeNode = null;
     }
@@ -63,16 +64,16 @@ public class LogCollector implements EventListener {
     @Override
     public void handle(StackFrame stackFrame) {
         reversalStack.push(stackFrame);
-        if (expectedNumberOfFrames == reversalStack.size()) {
-            collectThreadDump();
-        }
     }
 
     private void collectThreadDump() {
+        if (reversalStack.isEmpty()) {
+            return;
+        }
         while (!reversalStack.empty()) {
             collectStackFrame(reversalStack.size() == 1, reversalStack.pop());
         }
-        expectedNumberOfFrames = NOT_AWAITING;
+        notAwaiting = true;
         if (continuous) {
             emitProfile();
         }
@@ -108,7 +109,7 @@ public class LogCollector implements EventListener {
     @Override
     public void handle(Method newMethod) {
         methodNames.put(newMethod.getMethodId(), newMethod);
-        if (expectedNumberOfFrames == NOT_AWAITING && continuous) {
+        if (notAwaiting && continuous) {
             emitProfile();
         }
     }

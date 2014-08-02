@@ -50,8 +50,7 @@ public class LogCollectorTest {
 
 //        System.out.println(withoutEmpty(found));
 
-        // TODO unexpected frame '2' is just outright ignored
-        assertArrayEquals(new long[] { 1, 7 }, idOfLastMethodInEachThread(mostRecentProfile(found)));
+        assertArrayEquals(new long[] { 2, 7 }, idOfLastMethodInEachThread(mostRecentProfile(found)));
     }
 
     private long[] idOfLastMethodInEachThread(Profile profile) {
